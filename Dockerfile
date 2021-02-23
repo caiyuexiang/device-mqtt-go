@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE=golang:1.15-alpine
+ARG BASE=golang:1.15-alpine3.12
 FROM ${BASE} AS builder
 
 ARG ALPINE_PKG_BASE="build-base git openssh-client"
@@ -22,7 +22,7 @@ ARG ALPINE_PKG_EXTRA=""
 # If it is no longer necessary to avoid the CDN mirros we should consider dropping this as it is brittle.
 RUN sed -e 's/dl-cdn[.]alpinelinux.org/nl.alpinelinux.org/g' -i~ /etc/apk/repositories
 # Install our build time packages.
-RUN apk add --no-cache ${ALPINE_PKG_BASE} ${ALPINE_PKG_EXTRA}
+RUN apk add --update --no-cache ${ALPINE_PKG_BASE} ${ALPINE_PKG_EXTRA}
 
 WORKDIR $GOPATH/src/github.com/edgexfoundry/device-mqtt-go
 
@@ -34,7 +34,10 @@ COPY . .
 ARG MAKE='make build'
 RUN $MAKE
 
-FROM alpine
+FROM alpine:3.12
+
+# dumb-init needed for injected secure bootstrapping entrypoint script when run in secure mode.
+RUN apk add --update --no-cache dumb-init
 
 ENV APP_PORT=49982
 EXPOSE $APP_PORT
